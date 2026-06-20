@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Questions - Mini-Game Hub</title>
+    <style>
+        :root {
+            --bg-color: #222;
+            --container-bg: #333;
+            --accent-color: #444;
+            --text-color: #fff;
+            --highlight-color: #00adb5;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Back Button Navigation */
+        .nav-header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .back-btn {
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 1px solid var(--accent-color);
+            font-weight: bold;
+            transition: background 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background-color: var(--highlight-color);
+        }
+
+        /* Game Container */
+        .game-container {
+            background-color: var(--container-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+
+        .question-box {
+            margin-bottom: 30px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .sub-text {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 25px;
+            display: block;
+        }
+
+        /* Slider Styling */
+        .slider-wrapper {
+            margin: 20px 0;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--accent-color);
+            outline: none;
+            transition: opacity .2s;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--highlight-color);
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--highlight-color);
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--highlight-color);
+            margin-top: 15px;
+        }
+
+        /* Button Control */
+        .submit-btn {
+            background-color: var(--highlight-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Results Screen */
+        .hidden {
+            display: none;
+        }
+
+        .summary-list {
+            text-align: left;
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .summary-item {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="nav-header">
+        <a href="../index.html" class="back-btn">&larr; Back</a>
+    </header>
+
+    <main class="game-container">
+        <div id="game-screen">
+            <h1 id="game-title">Three Questions</h1>
+            
+            <div class="question-box">
+                <span id="question-text" class="question-text">Headaches</span>
+                <span id="sub-text" class="sub-text">(5 is bad)</span>
+                
+                <div class="slider-wrapper">
+                    <input type="range" id="rating-slider" class="slider" min="1" max="5" step="0.1" value="3.0">
+                    <div id="value-display" class="value-display">3.0</div>
+                </div>
+            </div>
+
+            <button id="submit-btn" class="submit-btn">Submit</button>
+        </div>
+
+        <div id="result-screen" class="hidden">
+            <h1>Game Complete!</h1>
+            <p>Here are your ratings:</p>
+            <div class="summary-list" id="summary-list">
+                </div>
+            <button id="restart-btn" class="submit-btn">Play Again</button>
+        </div>
+    </main>
+    <script>
+
+
+// 1. DOM elements selector (Keep these from your original code)
+const questionText = document.getElementById('question-text');
+const subText = document.getElementById('sub-text');
+const slider = document.getElementById('rating-slider');
+const valueDisplay = document.getElementById('value-display');
+const submitBtn = document.getElementById('submit-btn');
+const gameScreen = document.getElementById('game-screen');
+const resultScreen = document.getElementById('result-screen');
+const summaryList = document.getElementById('summary-list');
+const restartBtn = document.getElementById('restart-btn');
+
+// 2. Global game state variables
+let questions = []; // Starts empty, will be populated by the JSON fetch
+let currentQuestionIndex = 0;
+const answers = [];
+
+// 3. NEW: Fetch configuration from the Master Hub directory
+async function initGame() {
+    try {
+        // Looks for game-data.json in the parent directory '../'
+        const response = await fetch('../game-data.json');
+        if (!response.ok) throw new Error("Network response was not ok");
+        
+        const data = await response.json();
+        questions = data.threeQuestions;
+    } catch (error) {
+        console.error("Failed to load hub questions, using defaults:", error);
+        // Fallback defaults so your game doesn't crash if the JSON is missing
+        questions = [
+            { text: "ERROR- no data. Headaches", sub: "(5 is bad)" },
+            { text: "Fatigue Level", sub: "(5 is bad)" },
+            { text: "Stress Level", sub: "(5 is bad)" }
+        ];
+    }
+    
+    // Once data is loaded or defaulted, kick off the game
+    loadQuestion(0);
+}
+
+// 4. Game Logic Functions
+function loadQuestion(index) {
+    if (!questions || questions.length === 0) return;
+    questionText.textContent = questions[index].text;
+    subText.textContent = questions[index].sub;
+    slider.value = 3.0; 
+    valueDisplay.textContent = "3.0";
+}
+
+function showResults() {
+    gameScreen.classList.add('hidden');
+    resultScreen.classList.remove('hidden');
+    
+    summaryList.innerHTML = '';
+    answers.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'summary-item';
+        div.innerHTML = `<strong>${item.question}:</strong> ${item.rating} / 5.0`;
+        summaryList.appendChild(div);
+    });
+}
+
+// 5. Event Listeners
+slider.addEventListener('input', (e) => {
+    valueDisplay.textContent = parseFloat(e.target.value).toFixed(1);
+});
+
+submitBtn.addEventListener('click', () => {
+    answers.push({
+        question: questions[currentQuestionIndex].text,
+        rating: slider.value
+    });
+
+    currentQuestionIndex++;
+
+    if (currentQuestionIndex < questions.length) {
+        loadQuestion(currentQuestionIndex);
+    } else {
+        showResults();
+    }
+});
+
+restartBtn.addEventListener('click', () => {
+    currentQuestionIndex = 0;
+    answers.length = 0; 
+    gameScreen.classList.remove('hidden');
+    resultScreen.classList.add('hidden');
+    loadQuestion(0);
+});
+
+// 6. NEW: Start the initialization process when the window finishes loading
+  window.onload = initGame;
+
+</script>
+</body>
+</html>
+

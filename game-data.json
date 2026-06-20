@@ -1,0 +1,7 @@
+{
+  "threeQuestions": [
+    { "text": "Eye Strain", "sub": "(5 is blurry)" },
+    { "text": "Focus", "sub": "(5 is highly distracted)" },
+    { "text": "Hydration", "sub": "(5 is extremely thirsty)" }
+  ]
+}

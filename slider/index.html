@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slider Chooser</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Back to Menu Button */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #ff4757;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background-color: #ff6b81;
+        }
+
+        /* Game Container */
+        .slider-container {
+            background: #333;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 85%;
+            max-width: 400px;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+
+        #slider-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2ed573;
+            margin-bottom: 20px;
+        }
+
+        #slider-submit {
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            background-color: #2ed573;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #slider-submit:hover {
+            background-color: #26af5f;
+        }
+
+        #slider-result {
+            margin-top: 25px;
+            font-size: 18px;
+            min-height: 24px;
+            font-weight: italic;
+            color: #ffa502;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../index.html" class="back-btn">← Menu</a>
+
+    <div class="slider-container">
+        <h2>Rate the Experience</h2>
+        <input type="range" id="rate-slider" min="1" max="5" step="0.1" value="3.0">
+        <div id="slider-value">3.0</div>
+        <button id="slider-submit">Submit Rating</button>
+        <div id="slider-result"></div>
+    </div>
+
+    <script>
+        const rateSlider = document.getElementById('rate-slider');
+        const sliderValueDisplay = document.getElementById('slider-value');
+        const sliderSubmitBtn = document.getElementById('slider-submit');
+        const sliderResult = document.getElementById('slider-result');
+
+        // Update the decimal score live as the user slides
+        rateSlider.addEventListener('input', () => {
+            sliderValueDisplay.innerText = parseFloat(rateSlider.value).toFixed(1);
+        });
+
+        // Handle the submission
+        sliderSubmitBtn.addEventListener('click', () => {
+            const score = parseFloat(rateSlider.value).toFixed(1);
+            sliderResult.innerText = `You submitted a rating of: ${score} / 5.0!`;
+        });
+    </script>
+</body>
+</html>

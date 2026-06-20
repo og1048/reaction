@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Mini-Game Hub</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* View Management */
+        .view {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        /* Global UI Elements */
+        button {
+            padding: 12px 24px;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #1e90ff;
+            color: white;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #3742fa;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #ff4757;
+            z-index: 10;
+        }
+
+        .back-btn:hover {
+            background-color: #ff6b81;
+        }
+
+        /* Menu Styles */
+        h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+        }
+
+        /* Game 1: Reaction Styles */
+        #reaction-view {
+            cursor: pointer;
+        }
+
+        #status-text {
+            font-size: 24px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #box {
+            width: 200px;
+            height: 200px;
+            display: none;
+            position: absolute;
+            border-radius: 8px;
+        }
+
+        /* Game 2: Slider Styles */
+        .slider-container {
+            background: #333;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .slider-container h2 {
+            margin-top: 0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+
+        #slider-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2ed573;
+            margin-bottom: 20px;
+        }
+
+        #slider-result {
+            margin-top: 20px;
+            font-size: 18px;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu-view" class="view active">
+        <h1>Mini-Game Hub</h1>
+        <button onclick="switchView('reaction-view')">Reflex Reaction Test</button>
+        <button onclick="switchView('slider-view')">Slider Chooser (1-5)</button>
+    </div>
+
+    <div id="reaction-view" class="view">
+        <button class="back-btn" onclick="exitToMenu(event)">Menu</button>
+        <div id="status-text">Tap anywhere to Start</div>
+        <div id="box"></div>
+    </div>
+
+    <div id="slider-view" class="view">
+        <button class="back-btn" onclick="exitToMenu(event)">Menu</button>
+        
+        <div class="slider-container">
+            <h2>Rate the Experience</h2>
+            <input type="range" id="rate-slider" min="1" max="5" step="0.1" value="3.0">
+            <div id="slider-value">3.0</div>
+            <button id="slider-submit">Submit Rating</button>
+            <div id="slider-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // View Navigation Logic
+        function switchView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            // Show target view
+            document.getElementById(viewId).classList.add('active');
+
+            // Reset specific game states when entering
+            if (viewId === 'reaction-view') {
+                resetReactionGame();
+            } else if (viewId === 'slider-view') {
+                resetSliderGame();
+            }
+        }
+
+        function exitToMenu(event) {
+            event.stopPropagation(); // Stops the click from triggering game interactions
+            clearTimeout(timeoutId); // Stop any pending reaction loops
+            document.body.style.backgroundColor = '#222'; // Reset background color
+            switchView('menu-view');
+        }
+
+
+        /* ==========================================
+           GAME 1: REFLEX REACTION TEST LOGIC
+           ========================================== */
+        const reactionView = document.getElementById('reaction-view');
+        const statusText = document.getElementById('status-text');
+        const box = document.getElementById('box');
+
+        let startTime;
+        let timeoutId;
+        let gameState = 'idle';
+
+        // Event listeners are bound to reactionView instead of the body
+        reactionView.addEventListener('click', handleReactionInteraction);
+        reactionView.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('back-btn')) return;
+            e.preventDefault(); 
+            handleReactionInteraction();
+        });
+
+        function resetReactionGame() {
+            gameState = 'idle';
+            statusText.innerText = 'Tap anywhere to Start';
+            box.style.display = 'none';
+            document.body.style.backgroundColor = '#222';
+        }
+
+        function handleReactionInteraction() {
+            if (gameState === 'idle' || gameState === 'result') {
+                startTest();
+            } else if (gameState === 'waiting') {
+                tooEarly();
+            } else if (gameState === 'active') {
+                endTest();
+            }
+        }
+
+        function startTest() {
+            gameState = 'waiting';
+            statusText.innerText = 'Wait for color change...';
+            box.style.display = 'none';
+            document.body.style.backgroundColor = '#222';
+
+            const delay = Math.random() * 3000 + 2000;
+            timeoutId = setTimeout(() => {
+                spawnBox();
+            }, delay);
+        }
+
+        function spawnBox() {
+            gameState = 'active';
+            statusText.innerText = 'TAP NOW!';
+            
+            const colors = ['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#9b59b6'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            const maxX = window.innerWidth - 220;
+            const maxY = window.innerHeight - 220;
+            const randomX = Math.max(20, Math.floor(Math.random() * maxX));
+            const randomY = Math.max(20, Math.floor(Math.random() * maxY));
+
+            box.style.backgroundColor = randomColor;
+            box.style.left = randomX + 'px';
+            box.style.top = randomY + 'px';
+            box.style.display = 'block';
+
+            startTime = performance.now();
+        }
+
+        function endTest() {
+            const endTime = performance.now();
+            gameState = 'result';
+            const reactionTime = Math.round(endTime - startTime);
+            
+            statusText.innerText = `Your time: ${reactionTime}ms\n\nTap anywhere to try again.`;
+            box.style.display = 'none';
+            document.body.style.backgroundColor = '#2f3542';
+        }
+
+        function tooEarly() {
+            clearTimeout(timeoutId);
+            gameState = 'result';
+            statusText.innerText = `Too early! You failed.\n\nTap anywhere to restart.`;
+            document.body.style.backgroundColor = '#b33939';
+        }
+
+
+        /* ==========================================
+           GAME 2: SLIDER CHOOSER LOGIC
+           ========================================== */
+        const rateSlider = document.getElementById('rate-slider');
+        const sliderValueDisplay = document.getElementById('slider-value');
+        const sliderSubmitBtn = document.getElementById('slider-submit');
+        const sliderResult = document.getElementById('slider-result');
+
+        // Update the decimal score live as the user slides
+        rateSlider.addEventListener('input', () => {
+            sliderValueDisplay.innerText = parseFloat(rateSlider.value).toFixed(1);
+        });
+
+        sliderSubmitBtn.addEventListener('click', () => {
+            const score = parseFloat(rateSlider.value).toFixed(1);
+            sliderResult.innerText = `You submitted a rating of: ${score} / 5.0!`;
+        });
+
+        function resetSliderGame() {
+            rateSlider.value = 3.0;
+            sliderValueDisplay.innerText = "3.0";
+            sliderResult.innerText = "";
+            document.body.style.backgroundColor = '#222';
+        }
+    </script>
+</body>
+</html>

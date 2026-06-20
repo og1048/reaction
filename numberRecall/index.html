@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Recall Mini-Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #222;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Top Navigation */
+        .nav-header {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .back-btn:hover {
+            color: #fff;
+        }
+
+        .back-btn svg {
+            margin-right: 8px;
+            fill: currentColor;
+        }
+
+        /* Game Container */
+        .game-container {
+            background-color: #333;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #00adb5;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+
+        /* Display Screen area */
+        .display-box {
+            background-color: #1e1e1e;
+            height: 120px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: bold;
+            letter-spacing: 8px;
+            margin-bottom: 30px;
+            border: 2px solid #444;
+            transition: border-color 0.2s;
+        }
+
+        .display-box.prompt-state {
+            border-color: #00adb5;
+        }
+
+        /* Interactive Elements */
+        .instructions {
+            font-size: 1rem;
+            color: #ccc;
+            margin-bottom: 25px;
+            min-height: 48px;
+            line-height: 1.4;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            background-color: #444;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            min-width: 120px;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #555;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Contextual Button Colors */
+        .btn-yes { background-color: #2e7d32; }
+        .btn-yes:hover:not(:disabled) { background-color: #388e3c; }
+
+        .btn-no { background-color: #c62828; }
+        .btn-no:hover:not(:disabled) { background-color: #d32f2f; }
+
+        .btn-start { background-color: #00adb5; color: #222; width: 100%; }
+        .btn-start:hover:not(:disabled) { background-color: #00f5ff; }
+
+        /* Feedback Utilities */
+        .feedback {
+            margin-top: 15px;
+            font-weight: 600;
+            min-height: 24px;
+        }
+        .correct { color: #4caf50; }
+        .incorrect { color: #f44336; }
+    </style>
+</head>
+<body>
+
+    <header class="nav-header">
+        <a href="../index.html" class="back-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Back to Hub
+        </a>
+    </header>
+
+    <main class="game-container">
+        <h1>Number Recall</h1>
+        
+        <div class="score-board">
+            <span>Score: <strong id="score">0</strong></span>
+            <span>Streak: <strong id="streak">0</strong></span>
+        </div>
+
+        <div class="display-box" id="displayBox">---</div>
+
+        <p class="instructions" id="instructions">Press "Start Round" to memorize the sequence.</p>
+
+        <div id="controls">
+            <button class="btn-start" id="startBtn" onclick="startRound()">Start Round</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+    </main>
+
+    <script>
+        // Game State Variables
+        let currentSequence = [];
+        let testDigit = null;
+        let isMatch = false;
+        let score = 0;
+        let streak = 0;
+
+        // DOM Elements
+        const displayBox = document.getElementById('displayBox');
+        const instructions = document.getElementById('instructions');
+        const controls = document.getElementById('controls');
+        const feedback = document.getElementById('feedback');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+
+        // Helper: Generate a completely random digit (0-9)
+        function getRandomDigit() {
+            return Math.floor(Math.random() * 10);
+        }
+
+        // Core Gameplay Loop
+        function startRound() {
+            // Reset elements and interface state
+            feedback.textContent = "";
+            displayBox.classList.remove('prompt-state');
+            controls.innerHTML = `<button disabled>Memorize...</button>`;
+            
+            // 1. Determine size of initial sequence (2 to 4 digits)
+            const length = Math.floor(Math.random() * 3) + 2; 
+            currentSequence = [];
+            
+            // Build unique subset for distinct math/logic conditions 
+            while(currentSequence.length < length) {
+                const digit = getRandomDigit();
+                if(!currentSequence.includes(digit)) {
+                    currentSequence.push(digit);
+                }
+            }
+
+            // Display original sequence to user
+            displayBox.textContent = currentSequence.join('');
+            instructions.textContent = "Memorize the digits quickly!";
+
+            // 2. Clear sequence visibility after exactly 1 second (1000ms)
+            setTimeout(() => {
+                displayBox.textContent = "";
+                instructions.textContent = "...";
+                
+                // Slight brief pause for mental pacing before prompting next digit
+                setTimeout(() => {
+                    generateTestDigit();
+                }, 400);
+
+            }, 1000);
+        }
+
+        function generateTestDigit() {
+            // 3. 50/50 probability trigger
+            isMatch = Math.random() < 0.5;
+
+            if (isMatch) {
+                // Grab an item straight out of the active array
+                const randomIndex = Math.floor(Math.random() * currentSequence.length);
+                testDigit = currentSequence[randomIndex];
+            } else {
+                // Generate a fresh digit omitted from original sequence pool
+                let freshDigit;
+                do {
+                    freshDigit = getRandomDigit();
+                } while (currentSequence.includes(freshDigit));
+                testDigit = freshDigit;
+            }
+
+            // Render prompt to player
+            displayBox.textContent = testDigit;
+            displayBox.classList.add('prompt-state');
+            instructions.textContent = "Was this digit in the original sequence?";
+
+            // Swap to interactive action buttons
+            controls.innerHTML = `
+                <button class="btn-yes" onclick="handleResponse(true)">YES</button>
+                <button class="btn-no" onclick="handleResponse(false)">NO</button>
+            `;
+        }
+
+        function handleResponse(userGuessedYes) {
+            // Evaluation logic
+            const isCorrect = (userGuessedYes === isMatch);
+
+            if (isCorrect) {
+                score += 10;
+                streak += 1;
+                feedback.textContent = "Correct! +10 pts";
+                feedback.className = "feedback correct";
+            } else {
+                streak = 0;
+                feedback.textContent = `Incorrect! The answer was ${isMatch ? 'YES' : 'NO'}.`;
+                feedback.className = "feedback incorrect";
+            }
+
+            // Update scoreboard views
+            scoreEl.textContent = score;
+            streakEl.textContent = streak;
+
+            // Cycle view UI back to setup state
+            displayBox.classList.remove('prompt-state');
+            controls.innerHTML = `<button class="btn-start" id="startBtn" onclick="startRound()">Next Round</button>`;
+        }
+    </script>
+</body>
+</html>
