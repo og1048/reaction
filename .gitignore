@@ -1,0 +1,6 @@
+# Block Emacs/editor lockfiles
+.#*
+# Block duplicate copies
+*index 2.html
+# Ignore editor backup files
+*~
