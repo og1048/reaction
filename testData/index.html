@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Simple Game</title>
+    </head>
+<body>
+
+    <h1>Welcome to My Game</h1>
+    <div id="game-container">
+        </div>
+
+
+    <script>
+    function logGameRound(gameName, roundNumber) {
+        const apiID = 'd5s94bladh590'; // <-- MAKE SURE THIS IS CHANGED
+        const apiURL = `https://sheetdb.io/api/v1/${apiID}`;
+        
+        // Debug Check 1: Did you forget to change the ID?
+        if (apiID === 'YOUR_API_ID' || apiID.trim() === '') {
+            console.error("❌ DEBUG ERROR: You haven't replaced 'YOUR_API_ID' with your actual SheetDB API key!");
+            return;
+        }
+
+        const payload = {
+            data: [
+                {
+                    timestamp: new Date().toISOString(),
+                    game: gameName,
+                    round: roundNumber
+                }
+            ]
+        };
+
+        console.log(`📡 DEBUG: Attempting to send data to SheetDB (${apiURL})...`);
+        console.log("📦 DEBUG Payload being sent:", JSON.stringify(payload));
+
+        fetch(apiURL, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async response => {
+            console.log(`🔄 DEBUG: Received HTTP Status Code: ${response.status} (${response.statusText})`);
+            
+            // If the server returns a bad status (like 400, 403, 404, 500)
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server responded with an error: ${errorText}`);
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            console.log('✅ DEBUG SUCCESS! SheetDB accepted the data. Response from server:', data);
+        })
+        .catch(error => {
+            console.error('❌ DEBUG CRITICAL ERROR: The request completely failed!', error);
+        });
+    }
+
+    // Trigger the debug test on load
+    window.addEventListener('load', () => {
+        console.log("🚀 DEBUG: Window loaded completely. Triggering test log...");
+        logGameRound("Space Invaders", 1);
+    });
+</script>
+
+</body>
+</html>

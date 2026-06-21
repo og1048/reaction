@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Monitor</title>
+    <style>
+        :root {
+            --bg-color: #222;
+            --container-bg: #333;
+            --accent-color: #4caf50;
+            --accent-hover: #45a049;
+            --text-color: #eee;
+            --text-muted: #aaa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .back-btn:hover {
+            color: var(--text-color);
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        }
+
+        .intro-text {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .slider-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .slider-name {
+            text-transform: capitalize;
+        }
+
+        .slider-value {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 0;
+            background: #444;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 2rem;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-submit:disabled {
+            background-color: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            min-height: 1.2rem;
+        }
+        
+        .status-success { color: #4caf50; }
+        .status-error { color: #f44336; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="../index.html" class="back-btn">&#8592; Back</a>
+        
+        <h1>Weight Monitor</h1>
+        <p class="intro-text">Adjust the sliders below to log your metrics for this round.</p>
+
+        <form id="monitorForm">
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-name">Weight (kg)</span>
+                    <span id="weightVal" class="slider-value">73.5</span>
+                </div>
+                <input type="range" id="weight" min="72" max="76" step="0.1" value="73.5" oninput="updateValue('weight', this.value)">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-name">Poo</span>
+                    <span id="pooVal" class="slider-value">0</span>
+                </div>
+                <input type="range" id="poo" min="0" max="3" step="1" value="0" oninput="updateValue('poo', this.value)">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-name">Brekky</span>
+                    <span id="brekkyVal" class="slider-value">0</span>
+                </div>
+                <input type="range" id="brekky" min="0" max="3" step="1" value="0" oninput="updateValue('brekky', this.value)">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-name">Alcohol</span>
+                    <span id="alcoholVal" class="slider-value">0</span>
+                </div>
+                <input type="range" id="alcohol" min="0" max="9" step="1" value="0" oninput="updateValue('alcohol', this.value)">
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">Submit Entry</button>
+        </form>
+
+        <div id="status" class="status-message"></div>
+    </div>
+
+    <script>
+        const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
+
+        // Real-time slider value display
+        function updateValue(id, val) {
+            document.getElementById(id + 'Val').innerText = val;
+        }
+
+        // Form submission handling
+        document.getElementById('monitorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const statusDiv = document.getElementById('status');
+
+            // Disable button during network request
+            submitBtn.disabled = true;
+            statusDiv.className = 'status-message';
+            statusDiv.innerText = 'Submitting data...';
+
+            // Gather values
+            const weight = document.getElementById('weight').value;
+            const poo = document.getElementById('poo').value;
+            const brekky = document.getElementById('brekky').value;
+            const alcohol = document.getElementById('alcohol').value;
+
+            // Generate ~ separated data string
+            const roundDataString = `${weight}~${poo}~${brekky}~${alcohol}`;
+            
+            // Format accurate UTC timestamp
+            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+            // Construct payload matching SheetDB expected keys
+            const payload = {
+                data: [
+                    {
+                        timestamp: timestamp,
+                        game: 'weightMonitor',
+                        round: roundDataString
+                    }
+                ]
+            };
+
+            // Post to SheetDB
+            fetch(apiURL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                statusDiv.className = 'status-message status-success';
+                statusDiv.innerText = 'Data successfully saved!';
+                
+                // Reset inputs back to original defaults
+                document.getElementById('monitorForm').reset();
+                updateValue('weight', '73.5');
+                updateValue('poo', '0');
+                updateValue('brekky', '0');
+                updateValue('alcohol', '0');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusDiv.className = 'status-message status-error';
+                statusDiv.innerText = 'Failed to save data. Please try again.';
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

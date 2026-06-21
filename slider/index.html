@@ -119,7 +119,35 @@
         sliderSubmitBtn.addEventListener('click', () => {
             const score = parseFloat(rateSlider.value).toFixed(1);
             sliderResult.innerText = `You submitted a rating of: ${score} / 5.0!`;
+	    //logGameRound("Space Invaders hello", 1)
         });
+
+function logGameRound(gameName, roundNumber) {
+            const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590'
+            
+            const payload = {
+                data: [
+                    {
+                        timestamp: new Date().toISOString(),
+                        game: gameName,
+                        round: roundNumber
+                    }
+                ]
+            };
+
+            fetch(apiURL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => console.log('Success! Data logged:', data))
+            .catch(error => console.error('Error logging data:', error));
+}
+      
     </script>
 </body>
 </html>

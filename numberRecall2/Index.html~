@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Recall 2</title>
+    <style>
+        :root {
+            --bg-color: #222;
+            --container-bg: #333;
+            --text-color: #fff;
+            --accent-color: #4ea8de;
+            --btn-yes: #2a9d8f;
+            --btn-no: #e76f51;
+            --disabled: #555;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Back Button Top Left */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: var(--text-color);
+            text-decoration: none;
+            background-color: var(--container-bg);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: 1px solid #444;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background-color: #444;
+        }
+
+        /* Main Game Box */
+        .game-container {
+            background-color: var(--container-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+        }
+
+        /* Display Area for Numbers */
+        .display-box {
+            background-color: rgba(0, 0, 0, 0.2);
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            letter-spacing: 6px;
+            border: 1px solid #444;
+        }
+
+        .prompt-text {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            min-height: 27px;
+            color: #ccc;
+        }
+
+        /* Controls Layout */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            color: white;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            background-color: var(--disabled) !important;
+            color: #888;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-start { background-color: var(--accent-color); width: 100%; }
+        .btn-yes { background-color: var(--btn-yes); width: 50%; }
+        .btn-no { background-color: var(--btn-no); width: 50%; }
+
+        /* Status & Feedback Logs */
+        .status-log {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 15px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../index.html" class="back-btn">← Back to Hub</a>
+
+    <div class="game-container">
+        <h1>Number Recall 2</h1>
+        
+        <div id="display" class="display-box">---</div>
+        <div id="prompt" class="prompt-text">Press Start Round to begin!</div>
+
+        <div id="start-controls">
+            <button id="start-btn" class="btn-start" onclick="startRound()">Start Round</button>
+        </div>
+
+        <div id="game-controls" class="btn-group" style="display: none;">
+            <button id="yes-btn" class="btn-yes" onclick="submitAnswer('YES')">YES</button>
+            <button id="no-btn" class="btn-no" onclick="submitAnswer('NO')">NO</button>
+        </div>
+
+        <div id="status" class="status-log"></div>
+    </div>
+
+    <script>
+        const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
+        
+        // Internal Game State Variables
+        let initialSet = [];
+        let challengeDigit = null;
+        let startTime = null;
+        let isProcessingAction = false; 
+
+        // Helper function to get random integer inclusive
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // Generate an array of unique random single digits
+        function generateUniqueDigits(count) {
+            const digits = [];
+            while(digits.length < count) {
+                const r = getRandomInt(0, 9);
+                if(!digits.includes(r)) {
+                    digits.push(r);
+                }
+            }
+            return digits;
+        }
+
+        function startRound() {
+            if (isProcessingAction) return;
+            
+            // UI Updates
+            document.getElementById('status').innerText = "";
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('prompt').innerText = "Memorize the sequence...";
+            
+            // 1. Pick sequence size: 2, 3, or 4 digits
+            const setLength = getRandomInt(2, 4);
+            initialSet = generateUniqueDigits(setLength);
+            
+            // Display initial sequence
+            document.getElementById('display').innerText = initialSet.join(" ");
+
+            // 2. Clear sequence visibility exactly after 1 second (1000ms)
+            setTimeout(() => {
+                document.getElementById('display').innerText = "?";
+                determineChallenge(initialSet);
+            }, 1000);
+        }
+
+        function determineChallenge(originalSet) {
+            // 50% chance to present an old number, 50% chance a completely new number
+            const useExisting = Math.random() < 0.5;
+
+            if (useExisting) {
+                // Pull random item directly out of original configuration array
+                const randomIndex = getRandomInt(0, originalSet.length - 1);
+                challengeDigit = originalSet[randomIndex];
+            } else {
+                // Find a single digit that wasn't in original loop
+                let newDigit;
+                do {
+                    newDigit = getRandomInt(0, 9);
+                } while (originalSet.includes(newDigit));
+                challengeDigit = newDigit;
+            }
+
+            // Bring UI interactive hooks online
+            document.getElementById('prompt').innerText = `Was this digit in the set?`;
+            document.getElementById('display').innerText = challengeDigit;
+            
+            document.getElementById('start-controls').style.display = 'none';
+            document.getElementById('game-controls').style.display = 'flex';
+            
+            // Mark start point timer for tracking reaction speeds
+            startTime = performance.now();
+        }
+
+        function submitAnswer(userChoice) {
+            // Anti-spam debounce layer
+            if (isProcessingAction) return;
+            isProcessingAction = true;
+            
+            const endTime = performance.now();
+            const reactionTimeMs = Math.round(endTime - startTime);
+            
+            // Turn choice buttons off during API transmit sequences
+            document.getElementById('yes-btn').disabled = true;
+            document.getElementById('no-btn').disabled = true;
+            document.getElementById('status').innerText = "Saving round profile tracking data...";
+
+            // Match structural configurations for the string payload
+            const numbersShownStr = initialSet.join("");
+            const dataPayloadString = `${reactionTimeMs}~${numbersShownStr}~${challengeDigit}~${userChoice}`;
+
+            // Deliver tracking packet down to SheetDB via standard REST operations
+            fetch(apiURL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    data: [
+                        {
+                            timestamp: new Date().toISOString(),
+                            game: "numberRecall2",
+                            round: dataPayloadString
+                        }
+                    ]
+                })
+            })
+            .then(res => {
+                if(!res.ok) throw new Error("Database interface rejection profile hit.");
+                return res.json();
+            })
+            .then(data => {
+                document.getElementById('status').innerText = "Saved successfully!";
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('status').innerText = "Data logged locally (API Transmission Error).";
+            })
+            .finally(() => {
+                // Reset interaction nodes back to baseline state for consecutive play
+                setTimeout(() => {
+                    resetGameLayout();
+                }, 1200);
+            });
+        }
+
+        function resetGameLayout() {
+            isProcessingAction = false;
+            
+            // Reset state fields
+            document.getElementById('yes-btn').disabled = false;
+            document.getElementById('no-btn').disabled = false;
+            document.getElementById('start-btn').disabled = false;
+            
+            document.getElementById('display').innerText = "---";
+            document.getElementById('prompt').innerText = "Press Start Round to begin!";
+            
+            document.getElementById('game-controls').style.display = 'none';
+            document.getElementById('start-controls').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -62,11 +62,47 @@
     <h1>Mini-Game Hub</h1>
 
     <div class="menu-container">
-        <a href="./slider/index.html" class="menu-btn">Slider Chooser</a>
-        <a href="./numberRecall/index.html" class="menu-btn">numberRecall</a>
+        <a href="./weightMonitor/index.html" class="menu-btn">WeightMonitor</a>
         <a href="./threeQuestions/index.html" class="menu-btn">threeQuestions</a>
-        
+        <a href="./numberRecall2/index.html" class="menu-btn">numberRecall2</a>
+        <button id="play-all-btn" class="menu-btn" style="background-color: #2ed573;">Play All Games</button>
         </div>
 
+    <script>
+    // 1. Define your list of games
+    const gamesPlaylist = [
+        "./slider/index.html",
+        "./threeQuestions/index.html",
+        "./numberRecall2/index.html"
+    ];
+
+    // 2. "Play All" Button Click Handler
+    document.getElementById('play-all-btn').addEventListener('click', () => {
+        localStorage.setItem('playAllActive', 'true');
+        localStorage.setItem('currentGameIndex', '0');
+        
+        // Launch first game immediately
+        window.location.href = gamesPlaylist[0];
+    });
+
+    // 3. Hub Sequence Checker (runs automatically when returning to this page)
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('playAllActive') === 'true') {
+            // Get the index of the game we *just* finished, and increment it
+            let nextIndex = parseInt(localStorage.getItem('currentGameIndex') || '0') + 1;
+
+            if (nextIndex < gamesPlaylist.length) {
+                // Save progress and launch next game
+                localStorage.setItem('currentGameIndex', nextIndex.toString());
+                window.location.href = gamesPlaylist[nextIndex];
+            } else {
+                // Playlist finished! Clean up localStorage
+                localStorage.removeItem('playAllActive');
+                localStorage.removeItem('currentGameIndex');
+                alert('Playlist finished! Thanks for playing.');
+            }
+        }
+    });
+</script>
 </body>
 </html>
