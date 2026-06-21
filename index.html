@@ -14,20 +14,23 @@
     <h1>Mini-Game Hub</h1>
 
     <div class="menu-container">
+      
         <a href="./weightMonitor/index.html" class="menu-btn">WeightMonitor</a>
-        <a href="./threeQuestions/index.html" class="menu-btn">threeQuestions</a>
-        <a href="./numberRecall2/index.html?n=5" class="menu-btn">numberRecall2</a>
+        <a href="./answerQuestion/index.html?lineNumber=0" class="menu-btn">answerQuestion</a>
+        <a href="./numberRecall2/index.html?n=2" class="menu-btn">numberRecall2</a>
         <button id="play-all-btn" class="menu-btn" style="background-color: #2ed573;">Play All Games</button>
         </div>
     
     <script>
-    // 1. Define your list of games
+//################################################################
+    // 1. Define your list of games for auto-play
     const gamesPlaylist = [
-        "./slider/index.html",
-        "./threeQuestions/index.html",
-        "./numberRecall2/index.html"
+        "./answerQuestion/index.html?lineNumber=0",
+        "./answerQuestion/index.html?lineNumber=1",
+        "./answerQuestion/index.html?lineNumber=2",
+        "./numberRecall2/index.html?n=1",
     ];
-
+//################################################################
     // 2. "Play All" Button Click Handler
     document.getElementById('play-all-btn').addEventListener('click', () => {
         localStorage.setItem('playAllActive', 'true');
@@ -36,7 +39,7 @@
         // Launch first game immediately
         window.location.href = gamesPlaylist[0];
     });
-
+//################################################################
     // 3. Hub Sequence Checker (runs automatically when returning to this page)
     window.addEventListener('DOMContentLoaded', () => {
         if (localStorage.getItem('playAllActive') === 'true') {
@@ -55,6 +58,7 @@
             }
         }
     });
+//################################################################
 </script>
 </body>
 </html>

@@ -24,9 +24,13 @@
             <button id="start-btn" class="btn-start" onclick="startRound()">Start Round</button>
         </div>
 
-        <Div id="game-controls" class="btn-group" style="display: none;">
+        <div id="game-controls" class="btn-group" style="display: none;">
             <button id="yes-btn" class="btn-yes" onclick="submitAnswer('YES')">YES</button>
             <button id="no-btn" class="btn-no" onclick="submitAnswer('NO')">NO</button>
+        </div>
+
+	<div id="continue-controls" style="display: none; margin-top: 20px;">
+            <button id="continue-btn" class="btn-start" onclick="goToMenu()">Continue</button>
         </div>
 
         <div id="status" class="status-log"></div>
@@ -180,12 +184,17 @@ const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
                     if(!res.ok) throw new Error("Database interface rejection profile hit.");
                     return res.json();
                 })
-                .then(data => {
+
+		.then(data => {
                     document.getElementById('status').innerText = "All data saved successfully!";
+                    // Reveal the continue button to the user
+                    document.getElementById('continue-controls').style.display = 'block';
                 })
                 .catch(err => {
                     console.error(err);
                     document.getElementById('status').innerText = "Data logged locally (API Transmission Error).";
+                    // Reveal the continue button anyway so they aren't stuck
+                    document.getElementById('continue-controls').style.display = 'block';
                 });
             }
         }
@@ -197,6 +206,10 @@ const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
             document.getElementById('display').innerText = "---";
         }
 //################################################################
+      function goToMenu() {
+            // Redirect back to the hub index page
+            window.location.href = "../index.html";
+        }
     </script>
 </body>
 </html>

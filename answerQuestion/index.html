@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Answer Question</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #222;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #333;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            font-size: 1.6rem;
+            color: #f0f0f0;
+        }
+
+        .sub-text {
+            color: #aaa;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            display: block;
+        }
+
+        .slider-container {
+            margin-bottom: 30px;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #555;
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00adb5;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00adb5;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .current-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00adb5;
+            margin-top: 15px;
+        }
+
+        .btn {
+            background-color: #00adb5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #008c92;
+        }
+
+        .btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #ff5252;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="game-box">
+    <div id="loading">Loading question...</div>
+</div>
+
+<script>
+    // Configuration
+    const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
+    const jsonPath = '../game-data.json'; // Path to master JSON relative to this file
+
+    // Elements & State
+    const container = document.getElementById('game-box');
+    let questionIndex = 0;
+    let questionData = null;
+
+    // 1. Parse URL Parameter (?lineNumber=X)
+    const urlParams = new URLSearchParams(window.location.search);
+    const lineParam = urlParams.get('lineNumber');
+    
+    if (lineParam !== null) {
+        questionIndex = parseInt(lineParam, 10);
+    }
+
+    // 2. Fetch the question data from parent directory
+    fetch(jsonPath)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to load game-data.json');
+            return response.json();
+        })
+        .then(data => {
+            if (data.answerQuestions && data.answerQuestions[questionIndex]) {
+                questionData = data.answerQuestions[questionIndex];
+                renderGame();
+            } else {
+                renderError("Question not found for index: " + questionIndex);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            renderError("Error loading game data.");
+        });
+
+    // 3. Render game HTML dynamically based on JSON config
+    function renderGame() {
+        container.innerHTML = `
+            <h2 id="question-text">${questionData.text}</h2>
+            <span class="sub-text" id="sub-text">${questionData.sub || ''}</span>
+            
+            <div class="slider-container">
+                <input type="range" id="rating-slider" class="slider" 
+                       min="${questionData.min || 1}" 
+                       max="${questionData.max || 5}" 
+                       step="${questionData.step || 1}" 
+                       value="${questionData.startingValue || 3}">
+                <div class="current-value" id="slider-val">${questionData.startingValue || 3}</div>
+            </div>
+
+            <button class="btn" id="submit-btn">Submit Answer</button>
+        `;
+
+        const slider = document.getElementById('rating-slider');
+        const display = document.getElementById('slider-val');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Dynamic slider value rendering
+        slider.addEventListener('input', (e) => {
+            display.textContent = e.target.value;
+        });
+
+        // Form Submission
+        submitBtn.addEventListener('click', () => {
+            submitAnswer(slider.value, submitBtn);
+        });
+    }
+
+    // 4. Send Data to SheetDB & Redirect back to Hub
+    function submitAnswer(value, button) {
+        button.disabled = true;
+        button.textContent = "Sending...";
+
+        const timestamp = new Date().toISOString();
+        const gameName = "AnswerQuestion";
+        
+        // Output format: "qnNumber~answer" (e.g., "0~3.4")
+        const roundData = `${questionIndex}~${value}`;
+
+        const payload = {
+            data: [
+                {
+                    "timestamp": timestamp,
+                    "game": gameName,
+                    "round": roundData
+                }
+            ]
+        };
+
+        fetch(apiURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Spreadsheet write failed');
+            return response.json();
+        })
+        .then(result => {
+            // Success - Route back to the master hub parent directory
+            window.location.href = '../index.html'; 
+        })
+        .catch(err => {
+            alert("Error saving data. Please try again.");
+            button.disabled = false;
+            button.textContent = "Submit Answer";
+            console.error(err);
+        });
+    }
+
+    function renderError(message) {
+        container.innerHTML = `
+            <div class="error-msg">${message}</div>
+            <button class="btn" onclick="window.location.href='../index.html'">Back to Hub</button>
+        `;
+    }
+</script>
+</body>
+</html>
