@@ -6,8 +6,10 @@
     <title>Number Recall 2</title>
 </head>
 <body>
-    <a href="../index.html" class="back-btn">← Back to Hub</a>
-    <link rel="stylesheet" href="style.css?v=1.0">    
+  <a href="../index.html" class="back-btn">← Back to Hub</a>
+  
+  <link rel="stylesheet" href="style.css?v=1.0">
+  
     <div class="game-container">
         <h1>Number Recall 2</h1>
         <div id="display" class="display-box">---</div>

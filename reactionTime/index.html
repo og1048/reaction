@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Time Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #222;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: #333;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 90%;
+            max-width: 450px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: #ff4b5c;
+            margin-bottom: 10px;
+        }
+
+        .status-text {
+            font-size: 1.2rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        /* Fixed area for the heart to prevent layout shifts */
+        .game-area {
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .heart {
+            font-size: 120px;
+            color: #ff4b5c;
+            display: none;
+            transition: transform 0.1s ease;
+            filter: drop-shadow(0 0 15px rgba(255, 75, 92, 0.6));
+        }
+
+        .heart:active {
+            transform: scale(0.9);
+        }
+
+        .btn {
+            background-color: #ff4b5c;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: #ff6b7b;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .stats {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Screen overlay for early clicks */
+        .warning {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div>
+            <h1>Reaction Time</h1>
+            <div id="stats" class="stats">Round: 0 / 0</div>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div id="heart" class="heart">❤️</div>
+            <div id="instructions">
+                <p class="status-text" id="statusText">Tap the button below to start.</p>
+            </div>
+        </div>
+
+        <div>
+            <button id="actionBtn" class="btn">START</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration & API
+        const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
+        const gameName = 'reactionTime';
+
+        // Parse URL parameters for number of rounds
+        const urlParams = new URLSearchParams(window.location.search);
+        const totalRounds = parseInt(urlParams.get('n')) || 3; // Default to 3 if not provided
+
+        // Game State Variables
+        let currentRound = 0;
+        let startTime = 0;
+        let timeoutId = null;
+        let isWaitingForHeart = false;
+        let isHeartVisible = false;
+        let roundResults = [];
+
+        // DOM Elements
+        const gameArea = document.getElementById('gameArea');
+        const heart = document.getElementById('heart');
+        const statusText = document.getElementById('statusText');
+        const actionBtn = document.getElementById('actionBtn');
+        const statsDisplay = document.getElementById('stats');
+
+        // Initialize UI
+        statsDisplay.textContent = `Round: 0 / ${totalRounds}`;
+
+        // Event Listeners
+        actionBtn.addEventListener('click', handleButtonClick);
+        gameArea.addEventListener('click', handleGameAreaClick);
+
+        function handleButtonClick() {
+            if (actionBtn.textContent === 'START' || actionBtn.textContent === 'NEXT ROUND') {
+                startNextRound();
+            } else if (actionBtn.textContent === 'SENDING DATA...') {
+                // Do nothing while API handles request
+                return;
+            } else if (actionBtn.textContent === 'CONTINUE TO HUB') {
+                // Redirect back to the master hub parent directory
+                window.location.href = '../index.html'; 
+            }
+        }
+
+        function startNextRound() {
+            currentRound++;
+            statsDisplay.textContent = `Round: ${currentRound} / ${totalRounds}`;
+            actionBtn.classList.add('hidden');
+            heart.style.display = 'none';
+            isHeartVisible = false;
+            
+            statusText.innerHTML = "Wait for the heart to appear... <br><span style='color: #888; font-size:0.9rem;'>(Tapping early penalizes you!)</span>";
+            isWaitingForHeart = true;
+
+            // Random delay between 1.5 and 4.5 seconds
+            const randomDelay = Math.random() * 3000 + 1500;
+            
+            timeoutId = setTimeout(() => {
+                showHeart();
+            }, randomDelay);
+        }
+
+        function showHeart() {
+            isWaitingForHeart = false;
+            isHeartVisible = true;
+            statusText.textContent = "TAP NOW!!!";
+            heart.style.display = 'block';
+            startTime = performance.now();
+        }
+
+        function handleGameAreaClick() {
+            // Case 1: User tapped early before the heart appeared
+            if (isWaitingForHeart) {
+                clearTimeout(timeoutId);
+                isWaitingForHeart = false;
+                statusText.innerHTML = "<span class='warning'>Too Early!</span> Round skipped.";
+                roundResults.push("Too Early");
+                
+                prepareNextStep();
+            } 
+            // Case 2: User successfully tapped the heart/screen while visible
+            else if (isHeartVisible) {
+                const endTime = performance.now();
+                isHeartVisible = false;
+                heart.style.display = 'none';
+                
+                const reactionTime = Math.round(endTime - startTime);
+                roundResults.push(reactionTime);
+                
+                statusText.innerHTML = `Your time: <strong style="color:#ff4b5c; font-size:1.5rem;">${reactionTime}ms</strong>`;
+                
+                prepareNextStep();
+            }
+        }
+
+        function prepareNextStep() {
+            actionBtn.classList.remove('hidden');
+            
+            if (currentRound < totalRounds) {
+                actionBtn.textContent = 'NEXT ROUND';
+            } else {
+                endGameAndSubmit();
+            }
+        }
+
+        function endGameAndSubmit() {
+            // Filter out "Too Early" responses to calculate fastest valid time
+            const validTimes = roundResults.filter(r => typeof r === 'number');
+            const fastestTime = validTimes.length > 0 ? Math.min(...validTimes) + "ms" : "N/A";
+            
+            statusText.innerHTML = `<h3>Game Over!</h3><br>Fastest Reaction: <strong style="color:#00ffcc;">${fastestTime}</strong>`;
+            actionBtn.textContent = 'SENDING DATA...';
+            actionBtn.disabled = true;
+
+            // Format date/time: YYYY-MM-DD HH:MM:SS
+            const now = new Date();
+            const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+
+            // Construct data payload according to SheetDB structure (Array of rows)
+            // Format: timestamp, game, round (which maps to your columns)
+            const payload = {
+                data: roundResults.map((result, index) => ({
+                    timestamp: timestamp,
+                    game: gameName,
+                    round: `Round ${index + 1}: ${result}${typeof result === 'number' ? 'ms' : ''}`
+                }))
+            };
+
+            // Post all collected rounds at once to SheetDB
+            fetch(apiURL, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                readyToReturn();
+            })
+            .catch((error) => {
+                console.error('Error sending data:', error);
+                // Fail-safe: still let the user return if API has issues
+                readyToReturn();
+            });
+        }
+
+        function readyToReturn() {
+            actionBtn.disabled = false;
+            actionBtn.textContent = 'CONTINUE TO HUB';
+        }
+    </script>
+</body>
+</html>
+
