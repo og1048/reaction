@@ -167,7 +167,15 @@
             If 3rd item is 💎 &rarr; YES if 1 & 2 DO NOT match.
         </div>
 
-        <div id="game-play-screen">
+	<div id="game-start-screen">
+    <h2 style="margin-top: 0;">Ready to Play?</h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+        The timer starts the moment you press the button below. Match as quickly as you can!
+    </p>
+    <button class="btn btn-yes" style="width: 100%;" onclick="beginFirstRound()">Start Game</button>
+</div>
+
+	<div id="game-play-screen" class="hidden">
             <div class="game-display">
                 <div>
                     <span class="label">First 2 Images</span>
@@ -218,14 +226,28 @@
 
         // Current round temporary holders
         let c1, c2, c3;
+      //################################################################
 
-        // Initialization
-        function initGame() {
-            document.getElementById('round-indicator').innerText = `Round: 1/${totalRounds}`;
-            document.getElementById('best-time-indicator').innerText = `Best: --`;
-            startRound();
-        }
 
+// Fires on page load, sets headers, but waits for user click
+function initGame() {
+    document.getElementById('round-indicator').innerText = `Round: 1/${totalRounds}`;
+    document.getElementById('best-time-indicator').innerText = `Best: --`;
+    // We DO NOT call startRound() here anymore
+}
+
+// Triggered by the "Start Game" button
+function beginFirstRound() {
+    // Hide the start screen overlay
+    document.getElementById('game-start-screen').classList.add('hidden');
+    // Reveal the actual interactive play UI
+    document.getElementById('game-play-screen').classList.remove('hidden');
+    
+    // Fire the round setup and start the clock safely!
+    startRound();
+	}
+	
+//################################################################
         // Set up and display a new round
         function startRound() {
             // Pick random items
@@ -237,16 +259,13 @@
 	    document.getElementById('img1').innerText = (c1 === 'h') ? '❤️' : '💎';
 	    document.getElementById('img2').innerText = (c2 === 'h') ? '❤️' : '💎';
 	    document.getElementById('img3').innerText = (c3 === 'h') ? '❤️' : '💎';
-            //document.getElementById('img1').innerText = c1;
-           // document.getElementById('img2').innerText = c2;
-          //  document.getElementById('img3').innerText = c3;
 
             document.getElementById('round-indicator').innerText = `Round: ${currentRound}/${totalRounds}`;
             
             // Record timestamp high-resolution
             roundStartTime = performance.now();
         }
-
+//################################################################
         // Handle User input Selection
         function handleChoice(userChoice) {
             const responseTime = Math.round(performance.now() - roundStartTime);
@@ -270,7 +289,7 @@
                 endGame();
             }
         }
-
+//################################################################
         // Display results screen and trigger API upload
         function endGame() {
             document.getElementById('game-play-screen').classList.add('hidden');
@@ -285,7 +304,7 @@
 
             sendDataToSheet(finalResultString);
         }
-
+//################################################################
         // Format and post data to SheetDB via Async Fetch
         async function sendDataToSheet(resultString) {
             const spinner = document.getElementById('loading-spinner');
@@ -329,12 +348,12 @@
                 contBtn.style.opacity = 1;
             }
         }
-
+//################################################################
         // Redirect back out to the mini-game central dashboard
         function returnToHub() {
             window.location.href = "../index.html";
         }
-
+//################################################################
         // Fire up execution
         window.onload = initGame;
     </script>
