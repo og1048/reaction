@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>moveTwice</title>
+    <style>
+        :root {
+            --bg-color: #222;
+            --container-bg: #333;
+            --accent-color: #ff4757;
+            --success-color: #2ed573;
+            --text-color: #f1f2f6;
+            --grid-border: #444;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+
+        .status {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #ccc;
+            height: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(12, 1fr);
+            gap: 1px;
+            background-color: var(--grid-border);
+            border: 2px solid var(--grid-border);
+            border-radius: 6px;
+            width: 360px;
+            height: 360px;
+            margin: 0 auto 20px auto;
+        }
+
+        .cell {
+            background-color: var(--container-bg);
+            position: relative;
+        }
+
+        .ball {
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            width: 80%;
+            height: 80%;
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            box-shadow: 0 0 8px var(--accent-color);
+            transition: all 0.1s ease;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        /* Modal Overlay for Results */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .modal h2 { margin-top: 0; color: var(--success-color); }
+        .modal p { font-size: 18px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>moveTwice</h1>
+        <div id="status" class="status">Hits: 0 / 0</div>
+        
+        <div class="grid" id="grid"></div>
+
+        <button id="actionBtn" class="btn">HIT!</button>
+    </div>
+
+    <div id="endModal" class="overlay">
+        <div class="modal">
+            <h2>Game Completed!</h2>
+            <p>Your Best Reaction Time: <span id="bestTime" style="font-weight:bold;">-</span> ms</p>
+            <p id="uploadingText" style="font-size: 14px; color: #aaa;">Uploading data to hub...</p>
+            <button id="continueBtn" class="btn btn-success" style="display:none;">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Parse URL Parameters ---
+        // Expects ?n=4,m=1.7 or ?n=4&m=1.7
+        const urlParams = new URLSearchParams(window.location.search.replace(',', '&'));
+        const targetHits = parseInt(urlParams.get('n')) || 4;
+        const moveDelay = parseFloat(urlParams.get('m')) * 1000 || 1700; // Convert to ms
+
+        // --- 2. Game Configurations & State ---
+        const GRID_SIZE = 12;
+        const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
+        
+        let ballX = Math.floor(GRID_SIZE / 2);
+        let ballY = Math.floor(GRID_SIZE / 2);
+        
+        let lastDX = 0;
+        let lastDY = 0;
+        let consecutiveMoves = 0;
+        let doubleMoveDetected = false;
+        let userActionTakenThisTurn = false;
+
+        let successfulHitsCount = 0;
+        let turnStartTime = 0;
+        let resultsArray = [];
+        let correctTimes = [];
+        let gameTimer = null;
+
+        // --- 3. Initialize Grid Elements ---
+        const gridEl = document.getElementById('grid');
+        const actionBtn = document.getElementById('actionBtn');
+        const statusEl = document.getElementById('status');
+        const endModal = document.getElementById('endModal');
+        const bestTimeEl = document.getElementById('bestTime');
+        const continueBtn = document.getElementById('continueBtn');
+        const uploadingText = document.getElementById('uploadingText');
+
+        const cells = [];
+        for (let r = 0; r < GRID_SIZE; r++) {
+            for (let c = 0; c < GRID_SIZE; c++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                gridEl.appendChild(cell);
+                cells.push(cell);
+            }
+        }
+
+        const ballEl = document.createElement('div');
+        ballEl.classList.add('ball');
+
+        function renderBall() {
+            const index = ballY * GRID_SIZE + ballX;
+            cells[index].appendChild(ballEl);
+        }
+
+        // --- 4. Game Engine Logic ---
+        function startGame() {
+            updateStatus();
+            renderBall();
+            // Start the cycle loop
+            gameTimer = setInterval(gameTick, moveDelay);
+            turnStartTime = performance.now(); 
+        }
+
+        function gameTick() {
+            // Process the evaluation of the turn that JUST ended before moving
+            evaluateTurnEnd();
+
+            if (successfulHitsCount >= targetHits) {
+                endGame();
+                return;
+            }
+
+            // Reset turn-specific states
+            doubleMoveDetected = false;
+            userActionTakenThisTurn = false;
+
+            // Calculate next valid move directions
+            let validMoves = [];
+            // Directions: dx, dy pairs (-1, 0, 1) excluding (0,0)
+            for (let dx = -1; dx <= 1; dx++) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    if (dx === 0 && dy === 0) continue;
+                    
+                    let nx = ballX + dx;
+                    let ny = ballY + dy;
+
+                    // Verify boundaries
+                    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
+                        // Crucial Rule: NEVER move in the same direction 3 times
+                        if (consecutiveMoves === 2 && dx === lastDX && dy === lastDY) {
+                            continue; 
+                        }
+                        validMoves.push({dx, dy});
+                    }
+                }
+            }
+
+            // Fallback to any safe boundary step if strict rules clip options completely
+            if(validMoves.length === 0) {
+                 for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        if (dx === 0 && dy === 0) continue;
+                        if (ballX + dx >= 0 && ballX + dx < GRID_SIZE && ballY + dy >= 0 && ballY + dy < GRID_SIZE) {
+                            validMoves.push({dx, dy});
+                        }
+                    }
+                 }
+            }
+
+            // Select random move from valid moveset
+            const choice = validMoves[Math.floor(Math.random() * validMoves.length)];
+            
+            // Track if it's the SAME direction as last time
+            if (choice.dx === lastDX && choice.dy === lastDY) {
+                consecutiveMoves++;
+            } else {
+                consecutiveMoves = 1;
+            }
+
+            // Update variables
+            lastDX = choice.dx;
+            lastDY = choice.dy;
+            ballX += choice.dx;
+            ballY += choice.dy;
+
+            // Apply to UI
+            renderBall();
+
+            // Check if this new positioning represents a completed second consecutive movement step
+            if (consecutiveMoves === 2) {
+                doubleMoveDetected = true;
+            }
+
+            // Refresh timer stamp for reaction metrics
+            turnStartTime = performance.now();
+        }
+
+        function evaluateTurnEnd() {
+            // Case: There WAS a double move, but the user did NOT hit the button in time
+            if (doubleMoveDetected && !userActionTakenThisTurn) {
+                resultsArray.push("M");
+            }
+        }
+
+        // --- 5. User Input Action (Hit) ---
+        actionBtn.addEventListener('click', () => {
+            if (userActionTakenThisTurn || successfulHitsCount >= targetHits) return;
+            
+            userActionTakenThisTurn = true;
+            const reactionTime = Math.round(performance.now() - turnStartTime);
+
+            if (doubleMoveDetected) {
+                // SUCCESS: Pressed when 2 identical direction moves occurred
+                resultsArray.push(reactionTime);
+                correctTimes.push(reactionTime);
+                successfulHitsCount++;
+                updateStatus();
+            } else {
+                // FAILURE: Pressed when there wasn't a double move
+                resultsArray.push("F");
+            }
+        });
+
+        function updateStatus() {
+            statusEl.textContent = `Successful Hits: ${successfulHitsCount} / ${targetHits}`;
+        }
+
+        // --- 6. End Game and Data Submission ---
+        function endGame() {
+            clearInterval(gameTimer);
+            
+            const bestTime = correctTimes.length > 0 ? Math.min(...correctTimes) : "-";
+            bestTimeEl.textContent = bestTime;
+            endModal.style.display = 'flex';
+
+            // Prepare Data for SheetDB submission
+            const timestamp = new Date().toLocaleString();
+            const resultString = resultsArray.join('~');
+
+            const payload = {
+                data: [
+                    {
+                        timestamp: timestamp,
+                        game: "moveTwice",
+                        round: resultString
+                    }
+                ]
+            };
+
+            // Post request payload to SheetDB 
+            fetch(apiURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                uploadingText.style.display = 'none';
+                continueBtn.style.display = 'block';
+            })
+            .catch(err => {
+                console.error("Error saving data:", err);
+                // Fallback show button anyway so flow isn't permanently broken if API fails
+                uploadingText.textContent = "Data save failed, but you can still return.";
+                continueBtn.style.display = 'block';
+            });
+        }
+
+        // Return control back to main hub parent folder
+        continueBtn.addEventListener('click', () => {
+            window.location.href = "../index.html"; 
+        });
+
+        // Start running immediately on load
+        startGame();
+    </script>
+</body>
+</html>

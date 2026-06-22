@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>heartMatch</title>
+    <style>
+        :root {
+            --bg-color: #222;
+            --container-color: #333;
+            --accent-color: #ff4b5c;
+            --jewel-color: #00d2fc;
+            --text-color: #fff;
+            --text-muted: #aaa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--container-color);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 0.5rem;
+        }
+
+        .rule-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.4;
+        }
+
+        .game-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .pair-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .modifier-container {
+            border-top: 2px dashed #555;
+            padding-top: 1rem;
+            width: 100%;
+        }
+
+        .label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .sprite {
+            font-size: 3.5rem;
+            line-height: 1;
+            display: inline-block;
+            transition: transform 0.1s ease;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-yes {
+            background-color: #2ec4b6;
+        }
+        .btn-yes:hover { background-color: #25a195; }
+
+        .btn-no {
+            background-color: #e71d36;
+        }
+        .btn-no:hover { background-color: #c5182e; }
+
+        .btn-continue {
+            background-color: #4caf50;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loader {
+            border: 4px solid #444;
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="game-card">
+        <div class="stats-bar">
+            <span id="round-indicator">Round: 1/4</span>
+            <span id="best-time-indicator">Best: --</span>
+        </div>
+
+        <div class="rule-box" id="rule-box">
+            If 3rd item is ❤️ &rarr; YES if 1 & 2 match.<br>
+            If 3rd item is 💎 &rarr; YES if 1 & 2 DO NOT match.
+        </div>
+
+        <div id="game-play-screen">
+            <div class="game-display">
+                <div>
+                    <span class="label">First 2 Images</span>
+                    <div class="pair-container">
+                        <span class="sprite" id="img1">❤️</span>
+                        <span class="sprite" id="img2">💎</span>
+                    </div>
+                </div>
+                
+                <div class="modifier-container">
+                    <span class="label">Third Rule Image</span>
+                    <span class="sprite" id="img3">❤️</span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-yes" onclick="handleChoice('YES')">YES</button>
+                <button class="btn btn-no" onclick="handleChoice('NO')">NO</button>
+            </div>
+        </div>
+
+        <div id="game-end-screen" class="hidden">
+            <h2>Game Over!</h2>
+            <p id="final-stats">Your best reaction time was: --ms</p>
+            <div id="loading-spinner" class="hidden">
+                <div class="loader"></div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Saving data to hub...</p>
+            </div>
+            <button class="btn btn-continue" id="btn-cont" onclick="returnToHub()">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        // Game Settings Configuration
+      //const ITEMS = ['❤️', '💎'];
+      const ITEMS = ['h', 'j'];
+        const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
+        
+        // Grab 'n' from URL query parameters (default to 4 if missing/invalid)
+        const urlParams = new URLSearchParams(window.location.search);
+        const totalRounds = parseInt(urlParams.get('n')) || 4;
+
+        // Game State Variables
+        let currentRound = 1;
+        let bestTime = Infinity;
+        let roundStartTime = 0;
+        let roundLogs = []; // Array to hold the strings for each round
+
+        // Current round temporary holders
+        let c1, c2, c3;
+
+        // Initialization
+        function initGame() {
+            document.getElementById('round-indicator').innerText = `Round: 1/${totalRounds}`;
+            document.getElementById('best-time-indicator').innerText = `Best: --`;
+            startRound();
+        }
+
+        // Set up and display a new round
+        function startRound() {
+            // Pick random items
+            c1 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            c2 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            c3 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+
+            // Inject into DOM
+	    document.getElementById('img1').innerText = (c1 === 'h') ? '❤️' : '💎';
+	    document.getElementById('img2').innerText = (c2 === 'h') ? '❤️' : '💎';
+	    document.getElementById('img3').innerText = (c3 === 'h') ? '❤️' : '💎';
+            //document.getElementById('img1').innerText = c1;
+           // document.getElementById('img2').innerText = c2;
+          //  document.getElementById('img3').innerText = c3;
+
+            document.getElementById('round-indicator').innerText = `Round: ${currentRound}/${totalRounds}`;
+            
+            // Record timestamp high-resolution
+            roundStartTime = performance.now();
+        }
+
+        // Handle User input Selection
+        function handleChoice(userChoice) {
+            const responseTime = Math.round(performance.now() - roundStartTime);
+            
+            // Track best time
+            if (responseTime < bestTime) {
+                bestTime = responseTime;
+                document.getElementById('best-time-indicator').innerText = `Best: ${bestTime}ms`;
+            }
+
+            // Record round outcome data string: reactionTime~img1~img2~img3~choice
+            // Using standard text representations inside the string format to be spreadsheet clean
+            const logString = `${responseTime}~${c1}~${c2}~${c3}~${userChoice}`;
+            roundLogs.push(logString);
+
+            // Turn processing sequence
+            if (currentRound < totalRounds) {
+                currentRound++;
+                startRound();
+            } else {
+                endGame();
+            }
+        }
+
+        // Display results screen and trigger API upload
+        function endGame() {
+            document.getElementById('game-play-screen').classList.add('hidden');
+            document.getElementById('rule-box').classList.add('hidden');
+            document.getElementById('game-end-screen').classList.remove('hidden');
+            
+            document.getElementById('final-stats').innerText = `Your best reaction time was: ${bestTime}ms`;
+            
+            // Join all log rows with a trailing delimiter or unique layout spacing if needed. 
+            // Here, all rounds fit into one row's layout string separated by "~".
+            const finalResultString = roundLogs.join('~');
+
+            sendDataToSheet(finalResultString);
+        }
+
+        // Format and post data to SheetDB via Async Fetch
+        async function sendDataToSheet(resultString) {
+            const spinner = document.getElementById('loading-spinner');
+            const contBtn = document.getElementById('btn-cont');
+            
+            spinner.classList.remove('hidden');
+            contBtn.disabled = true;
+            contBtn.style.opacity = 0.5;
+
+            const timestamp =  new Date().toISOString();
+            
+            // Object schema mapping precisely to requested layout: timestamp, game, round
+            const payload = {
+                data: [
+                    {
+                        "timestamp": timestamp,
+                        "game": "heartMatch",
+                        "round": resultString
+                    }
+                ]
+            };
+
+            try {
+                const response = await fetch(apiURL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if(!response.ok) {
+                    console.error("Failed to write to API endpoint. Server responded code: " + response.status);
+                }
+            } catch (error) {
+                console.error("Error dispatching payload data to sheet API:", error);
+            } finally {
+                // Ensure UI unlocks so player isn't stuck if connection glitches
+                spinner.classList.add('hidden');
+                contBtn.disabled = false;
+                contBtn.style.opacity = 1;
+            }
+        }
+
+        // Redirect back out to the mini-game central dashboard
+        function returnToHub() {
+            window.location.href = "../index.html";
+        }
+
+        // Fire up execution
+        window.onload = initGame;
+    </script>
+</body>
+</html>

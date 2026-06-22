@@ -248,7 +248,7 @@
 
             // Format date/time: YYYY-MM-DD HH:MM:SS
             const now = new Date();
-            const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+            const timestamp = new Date().toISOString();
 
             // Construct data payload according to SheetDB structure (Array of rows)
             // Format: timestamp, game, round (which maps to your columns)

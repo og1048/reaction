@@ -222,7 +222,7 @@
             const roundDataString = `${weight}~${poo}~${brekky}~${alcohol}`;
             
             // Format accurate UTC timestamp
-            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            const timestamp = new Date().toISOString();
 
             // Construct payload matching SheetDB expected keys
             const payload = {

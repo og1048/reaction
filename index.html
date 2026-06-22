@@ -14,48 +14,93 @@
     <h1>Mini-Game Hub</h1>
 
     <div class="menu-container">
-      
+       <button id="play-btn-1" class="menu-btn" style="background-color: #2ed573;">Play all set 1</button>
+       <button id="play-btn-2" class="menu-btn" style="background-color: #2ed573;">Play all set 2</button>
+       <button id="play-btn-3" class="menu-btn" style="background-color: #2ed573;">Play all set 3</button>
+       <button id="play-btn-4" class="menu-btn" style="background-color: #2ed573;">Play all set 4</button>
+       <button id="play-btn-5" class="menu-btn" style="background-color: #2ed573;">Play all set 5</button>
+        <a href="./stroopTest/index.html?choice=4&nrounds=6" class="menu-btn">stroopTest</a>
+        <a href="./moveTwice/index.html?n=1&m=1.5" class="menu-btn">moveTwice</a>
+        <a href="./reactionTime/index.html?n=1" class="menu-btn">reactionTime</a>
+        <a href="./heartMatch/index.html?n=1" class="menu-btn">heartMatch</a>
         <a href="./weightMonitor/index.html" class="menu-btn">WeightMonitor</a>
         <a href="./answerQuestion/index.html?lineNumber=0" class="menu-btn">answerQuestion</a>
-        <a href="./numberRecall2/index.html?n=2" class="menu-btn">numberRecall2</a>
-        <button id="play-all-btn" class="menu-btn" style="background-color: #2ed573;">Play All Games</button>
+        <a href="./numberRecall2/index.html?n=1" class="menu-btn">numberRecall2</a>
+       
         </div>
     
+
     <script>
-//################################################################
-    // 1. Define your list of games for auto-play
-    const gamesPlaylist = [
+
+
+      //################################################################
+// 1. Define your 5 distinct playlists
+const playlists = {
+    '1': [
         "./answerQuestion/index.html?lineNumber=0",
         "./reactionTime/index.html?n=5",
+    ],
+    '2': [
         "./answerQuestion/index.html?lineNumber=1",
         "./numberRecall2/index.html?n=4",
-    ];
+    ],
+    '3': [
+        "./reactionTime/index.html?n=5",
+    ],
+    '4': [
+        "./numberRecall2/index.html?n=4",
+    ],
+    '5': [
+	"./stroopTest/index.html?choice=4&nrounds=6",
+        "./answerQuestion/index.html?lineNumber=0",
+    ]
+};
 //################################################################
-    // 2. "Play All" Button Click Handler
-    document.getElementById('play-all-btn').addEventListener('click', () => {
-        localStorage.setItem('playAllActive', 'true');
-        localStorage.setItem('currentGameIndex', '0');        
-        // Launch first game immediately
-        window.location.href = gamesPlaylist[0];
-    });
+// 2. Attach Event Listeners to all 5 buttons dynamically
+for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById(`play-btn-${i}`);
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const currentPlaylist = playlists[i];
+            
+            if (currentPlaylist && currentPlaylist.length > 0) {
+                localStorage.setItem('playAllActive', 'true');
+                localStorage.setItem('activePlaylistId', i.toString()); // Track which list is active
+                localStorage.setItem('currentGameIndex', '0');        
+                
+                // Launch first game of the selected playlist immediately
+                window.location.href = currentPlaylist[0];
+            }
+        });
+    }
+}
 //################################################################
-    // 3. Hub Sequence Checker (runs automatically when returning to this page)
-    window.addEventListener('DOMContentLoaded', () => {
-        if (localStorage.getItem('playAllActive') === 'true') {
+// 3. Hub Sequence Checker (runs automatically when returning to this page)
+window.addEventListener('DOMContentLoaded', () => {
+    if (localStorage.getItem('playAllActive') === 'true') {
+        const activeId = localStorage.getItem('activePlaylistId');
+        const currentPlaylist = playlists[activeId];
+
+        // Safety check to ensure the playlist exists
+        if (currentPlaylist) {
             // Get the index of the game we *just* finished, and increment it
             let nextIndex = parseInt(localStorage.getItem('currentGameIndex') || '0') + 1;
-            if (nextIndex < gamesPlaylist.length) {
+            
+            if (nextIndex < currentPlaylist.length) {
                 // Save progress and launch next game
                 localStorage.setItem('currentGameIndex', nextIndex.toString());
-                window.location.href = gamesPlaylist[nextIndex];
+                window.location.href = currentPlaylist[nextIndex];
             } else {
                 // Playlist finished! Clean up localStorage
                 localStorage.removeItem('playAllActive');
+                localStorage.removeItem('activePlaylistId');
                 localStorage.removeItem('currentGameIndex');
                 alert('Playlist finished! Thanks for playing.');
             }
         }
-    });
+    }
+});
+			    //################################################//	
 //################################################################
 </script>
 </body>
