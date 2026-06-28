@@ -160,6 +160,18 @@
         // --- 2. Game Configurations & State ---
         const GRID_SIZE = 12;
         const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
+
+        // Get or create unique user ID
+        function getUserId() {
+            let userId = localStorage.getItem('user_id');
+            if (!userId) {
+                userId = typeof crypto.randomUUID === 'function' 
+                    ? crypto.randomUUID() 
+                    : 'user_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('user_id', userId);
+            }
+            return userId;
+        }
         
         let ballX = Math.floor(GRID_SIZE / 2);
         let ballY = Math.floor(GRID_SIZE / 2);
@@ -341,6 +353,7 @@
             const payload = {
                 data: [
                     {
+                        userId: getUserId(),
                         timestamp: timestamp,
                         game: "moveTwice",
                         round: resultString

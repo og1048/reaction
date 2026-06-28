@@ -138,6 +138,18 @@
         const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
         const gameName = 'reactionTime';
 
+        // Get or create unique user ID
+        function getUserId() {
+            let userId = localStorage.getItem('user_id');
+            if (!userId) {
+                userId = typeof crypto.randomUUID === 'function' 
+                    ? crypto.randomUUID() 
+                    : 'user_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('user_id', userId);
+            }
+            return userId;
+        }
+
         // Parse URL parameters for number of rounds
         const urlParams = new URLSearchParams(window.location.search);
         const totalRounds = parseInt(urlParams.get('n')) || 3; // Default to 3 if not provided
@@ -254,6 +266,7 @@
             // Format: timestamp, game, round (which maps to your columns)
             const payload = {
                 data: roundResults.map((result, index) => ({
+                    userId: getUserId(),
                     timestamp: timestamp,
                     game: gameName,
                     round: `Round ${index + 1}: ${result}${typeof result === 'number' ? 'ms' : ''}`

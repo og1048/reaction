@@ -185,6 +185,18 @@
         const API_URL = 'https://sheetdb.io/api/v1/d5s94bladh590';
         const HUB_URL = '../index.html'; // Adjust if your parent main hub page is named differently
 
+        // Get or create unique user ID
+        function getUserId() {
+            let userId = localStorage.getItem('user_id');
+            if (!userId) {
+                userId = typeof crypto.randomUUID === 'function' 
+                    ? crypto.randomUUID() 
+                    : 'user_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('user_id', userId);
+            }
+            return userId;
+        }
+
         // Palette mapping
         const colorPool = ['red', 'green', 'blue', 'yellow'];
         const ruleColorPool = ['red', 'green', 'blue', 'yellow', 'white'];
@@ -324,6 +336,7 @@
             const payload = {
                 data: [
                     {
+                        "userId": getUserId(),
                         "timestamp": timestamp,
                         "game": "stroopTest",
                         "round": finalResultString

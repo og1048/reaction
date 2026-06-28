@@ -24,6 +24,18 @@
         const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
         const jsonPath = '../game-data.json'; // Path to master JSON relative to this file
 
+        // Get or create unique user ID
+        function getUserId() {
+            let userId = localStorage.getItem('user_id');
+            if (!userId) {
+                userId = typeof crypto.randomUUID === 'function' 
+                    ? crypto.randomUUID() 
+                    : 'user_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('user_id', userId);
+            }
+            return userId;
+        }
+
         // Elements & State
         const container = document.getElementById('game-box');
         let questionIndex = 0;
@@ -114,6 +126,7 @@
             const payload = {
                 data: [
                     {
+                        "userId": getUserId(),
                         "timestamp": timestamp,
                         "game": gameName,
                         "round": roundData

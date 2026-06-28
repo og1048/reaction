@@ -31,6 +31,18 @@
         // SETUP SCRIPT
         const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
 
+        // Get or create unique user ID
+        function getUserId() {
+            let userId = localStorage.getItem('user_id');
+            if (!userId) {
+                userId = typeof crypto.randomUUID === 'function' 
+                    ? crypto.randomUUID() 
+                    : 'user_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('user_id', userId);
+            }
+            return userId;
+        }
+
         // Parse round configurations from URL parameters (?n=5)
         const urlParams = new URLSearchParams(window.location.search);
         const maxRounds = parseInt(urlParams.get('n')) || 5;
@@ -135,6 +147,7 @@
 
             // Save individual round data locally to our batch array
             batchPayloads.push({
+                userId: getUserId(),
                 timestamp: new Date().toISOString(),
                 game: "numberRecall2",
                 round: dataPayloadString

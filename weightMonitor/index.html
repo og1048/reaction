@@ -195,6 +195,18 @@
     <script>
         const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
 
+        // Get or create unique user ID
+        function getUserId() {
+            let userId = localStorage.getItem('user_id');
+            if (!userId) {
+                userId = typeof crypto.randomUUID === 'function' 
+                    ? crypto.randomUUID() 
+                    : 'user_' + Math.random().toString(36).substring(2, 15);
+                localStorage.setItem('user_id', userId);
+            }
+            return userId;
+        }
+
         // Real-time slider value display
         function updateValue(id, val) {
             document.getElementById(id + 'Val').innerText = val;
@@ -228,6 +240,7 @@
             const payload = {
                 data: [
                     {
+                        userId: getUserId(),
                         timestamp: timestamp,
                         game: 'weightMonitor',
                         round: roundDataString
