@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>moveTwice</title>
+    
+<!-- ################################################################  -->
     <style>
         :root {
             --bg-color: #222;
@@ -127,15 +129,14 @@
         .modal h2 { margin-top: 0; color: var(--success-color); }
         .modal p { font-size: 18px; margin: 20px 0; }
     </style>
+<!-- ################################################################  -->
 </head>
 <body>
 
     <div class="container">
         <h1>moveTwice</h1>
-        <div id="status" class="status">Hits: 0 / 0</div>
-        
+        <div id="status" class="status">Hits: 0 / 0</div>        
         <div class="grid" id="grid"></div>
-
         <button id="actionBtn" class="btn">HIT!</button>
     </div>
 
@@ -149,12 +150,13 @@
     </div>
 
     <script>
+//################################################################
         // --- 1. Parse URL Parameters ---
         // Expects ?n=4,m=1.7 or ?n=4&m=1.7
         const urlParams = new URLSearchParams(window.location.search.replace(',', '&'));
         const targetHits = parseInt(urlParams.get('n')) || 4;
         const moveDelay = parseFloat(urlParams.get('m')) * 1000 || 1700; // Convert to ms
-
+//################################################################
         // --- 2. Game Configurations & State ---
         const GRID_SIZE = 12;
         const apiURL = 'https://sheetdb.io/api/v1/d5s94bladh590';
@@ -172,8 +174,9 @@
         let turnStartTime = 0;
         let resultsArray = [];
         let correctTimes = [];
-        let gameTimer = null;
-
+      let gameTimer = null;
+      let stepsUntilDoubleMove = Math.floor(Math.random() * 3) + 4;
+//################################################################
         // --- 3. Initialize Grid Elements ---
         const gridEl = document.getElementById('grid');
         const actionBtn = document.getElementById('actionBtn');
@@ -200,7 +203,7 @@
             const index = ballY * GRID_SIZE + ballX;
             cells[index].appendChild(ballEl);
         }
-
+//################################################################
         // --- 4. Game Engine Logic ---
         function startGame() {
             updateStatus();
@@ -209,8 +212,11 @@
             gameTimer = setInterval(gameTick, moveDelay);
             turnStartTime = performance.now(); 
         }
-
-        function gameTick() {
+//################################################################
+      function gameTick() {
+	  //MD added
+	  stepsUntilDoubleMove--;
+	  
             // Process the evaluation of the turn that JUST ended before moving
             evaluateTurnEnd();
 
@@ -235,8 +241,8 @@
 
                     // Verify boundaries
                     if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
-                        // Crucial Rule: NEVER move in the same direction 3 times
-                        if (consecutiveMoves === 2 && dx === lastDX && dy === lastDY) {
+                        // don't move in same direction twice as we control this below. 
+                        if ( dx === lastDX && dy === lastDY) {
                             continue; 
                         }
                         validMoves.push({dx, dy});
@@ -258,7 +264,13 @@
 
             // Select random move from valid moveset
             const choice = validMoves[Math.floor(Math.random() * validMoves.length)];
-            
+	  //MD added code
+	  console.log("Steps until double move:", stepsUntilDoubleMove);
+	    if (consecutiveMoves < 2 && stepsUntilDoubleMove < 1 && validMoves.length !== 0){
+		choice.dx = lastDX;
+		choice.dy = lastDY;
+		stepsUntilDoubleMove = Math.floor(Math.random() * 5) + 1; 
+	    }            
             // Track if it's the SAME direction as last time
             if (choice.dx === lastDX && choice.dy === lastDY) {
                 consecutiveMoves++;
@@ -283,14 +295,14 @@
             // Refresh timer stamp for reaction metrics
             turnStartTime = performance.now();
         }
-
+//################################################################
         function evaluateTurnEnd() {
             // Case: There WAS a double move, but the user did NOT hit the button in time
             if (doubleMoveDetected && !userActionTakenThisTurn) {
                 resultsArray.push("M");
             }
         }
-
+//################################################################
         // --- 5. User Input Action (Hit) ---
         actionBtn.addEventListener('click', () => {
             if (userActionTakenThisTurn || successfulHitsCount >= targetHits) return;
@@ -313,7 +325,7 @@
         function updateStatus() {
             statusEl.textContent = `Successful Hits: ${successfulHitsCount} / ${targetHits}`;
         }
-
+//################################################################
         // --- 6. End Game and Data Submission ---
         function endGame() {
             clearInterval(gameTimer);
@@ -354,14 +366,15 @@
                 continueBtn.style.display = 'block';
             });
         }
-
+//################################################################
         // Return control back to main hub parent folder
         continueBtn.addEventListener('click', () => {
             window.location.href = "../index.html"; 
         });
-
+//################################################################
         // Start running immediately on load
-        startGame();
+      startGame();
+//################################################################
     </script>
 </body>
 </html>

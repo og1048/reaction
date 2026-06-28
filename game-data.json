@@ -1,16 +1,16 @@
 {
   "answerQuestions": [
     {
-      "text": "What is your mood?",
-      "sub": "(1 is happy, 5 is sad)",
+	"text": "Brainfog Level in last 0 to 30 minutes ",
+      "sub": "(1 is none, 5 is very bad)",
       "min": "1",
       "max": "5",
       "step": "0.1",
-      "startingValue": "3.0"
-    },
+      "startingValue": "3.0."
+    },   
     {
-      "text": "How energized do you feel right now?",
-      "sub": "(1 is exhausted, 10 is ready to run a marathon)",
+      "text": "COMPARE now to this morning. Fatigue.",
+      "sub": "(1 is worst this morning, 5 is worst now. 3 is about the same)",
       "min": "1",
       "max": "10",
       "step": "1",

@@ -63,12 +63,12 @@
             <span class="sub-text" id="sub-text">${questionData.sub || ''}</span>
             
             <div class="slider-container">
-                <input type="range" id="rating-slider" class="slider" 
+                <input type="range" id="rating-slider" class="slider hidden-thumb" 
                        min="${questionData.min || 1}" 
                        max="${questionData.max || 5}" 
                        step="${questionData.step || 1}" 
                        value="${questionData.startingValue || 3}">
-                <div class="current-value" id="slider-val">${questionData.startingValue || 3}</div>
+                <div class="current-value hidden-val" id="slider-val">${questionData.startingValue || 3}</div>
 
             </div>
 
@@ -88,6 +88,16 @@
             submitBtn.addEventListener('click', () => {
                 submitAnswer(slider.value, submitBtn);
             });
+
+            // Reveal slider thumb and value display on first screen touch/interaction
+            function revealControls() {
+                slider.classList.remove('hidden-thumb');
+                display.classList.remove('hidden-val');
+                window.removeEventListener('mousedown', revealControls);
+                window.removeEventListener('touchstart', revealControls);
+            }
+            window.addEventListener('mousedown', revealControls);
+            window.addEventListener('touchstart', revealControls);
         }
         //################################################################  
         // 4. Send Data to SheetDB & Redirect back to Hub
