@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="background-color: #222;">
 
 <head>
     <meta charset="UTF-8">
@@ -84,11 +84,23 @@
 
             </div>
 
+            <div class="slider-container secondary-slider-container">
+                <span class="secondary-label">Optional - Did you find this easy or hard to answer?<br><small>1 = Easy, 5 = Hard</small></span>
+                <input type="range" id="secondary-slider" class="slider secondary-slider hidden-thumb" 
+                       min="1" 
+                       max="5" 
+                       step="1" 
+                       value="3">
+                <div class="current-value secondary-val" id="secondary-slider-val">-</div>
+            </div>
+
             <button class="btn" id="submit-btn">Submit Answer</button>
         `;
 
             const slider = document.getElementById('rating-slider');
             const display = document.getElementById('slider-val');
+            const secondarySlider = document.getElementById('secondary-slider');
+            const secondaryDisplay = document.getElementById('secondary-slider-val');
             const submitBtn = document.getElementById('submit-btn');
 
             // Dynamic slider value rendering
@@ -96,22 +108,38 @@
                 display.textContent = e.target.value;
             });
 
+            // Track interaction with the optional secondary slider
+            let secondaryTouched = false;
+            
+            const revealSecondary = (e) => {
+                secondaryTouched = true;
+                secondarySlider.classList.remove('hidden-thumb');
+                if (e.target.value) {
+                    secondaryDisplay.textContent = e.target.value;
+                }
+            };
+
+            secondarySlider.addEventListener('input', revealSecondary);
+            secondarySlider.addEventListener('mousedown', revealSecondary);
+            secondarySlider.addEventListener('touchstart', revealSecondary);
+
             // Form Submission
             submitBtn.addEventListener('click', () => {
-                submitAnswer(slider.value, submitBtn);
+                const secondVal = secondaryTouched ? secondarySlider.value : "";
+                submitAnswer(slider.value, secondVal, submitBtn);
             });
         }
         //################################################################  
         // 4. Send Data to SheetDB & Redirect back to Hub
-        function submitAnswer(value, button) {
+        function submitAnswer(value, secondValue, button) {
             button.disabled = true;
             button.textContent = "Sending...";
 
             const timestamp = new Date().toISOString();
             const gameName = "AnswerQuestion";
 
-            // Output format: "qnNumber~answer" (e.g., "0~3.4")
-            const roundData = `${questionIndex}~${value}`;
+            // Output format: "qnNumber~answer~secondaryAnswer" (e.g., "0~3.4~2")
+            const roundData = `${questionIndex}~${value}~${secondValue}`;
 
             const payload = {
                 data: [

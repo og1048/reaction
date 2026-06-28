@@ -1,28 +1,28 @@
 {
   "answerQuestions": [
     {
-	"text": "Brainfog Level in last 0 to 30 minutes ",
-      "sub": "(1 is none, 5 is very bad)",
+	"text": "Dizzyness- any today?",
+      "sub": "(<- None.........Loads ->)",
       "min": "1",
       "max": "5",
       "step": "0.1",
       "startingValue": "3.0."
     },   
     {
-      "text": "COMPARE now to this morning. Fatigue.",
-      "sub": "(1 is worst this morning, 5 is worst now. 3 is about the same)",
+      "text": "Brain Fog",
+	"sub": "(<- None.........Loads ->)",
       "min": "1",
-      "max": "10",
-      "step": "1",
-      "startingValue": "5"
+      "max": "5",
+      "step": "0.1",
+      "startingValue": "3"
     },
     {
-      "text": "Rate your focus level over the last hour.",
-      "sub": "(0.0 is completely distracted, 1.0 is total zone)",
-      "min": "0.0",
-      "max": "1.0",
-      "step": "0.05",
-      "startingValue": "0.50"
+      "text": "Illness/cold/cough",
+	"sub": "(<- None.........Loads ->)",
+      "min": "1",
+      "max": "5",
+      "step": "0.1",
+      "startingValue": "3"
     }
   ]
 }
