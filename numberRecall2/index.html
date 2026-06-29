@@ -45,7 +45,7 @@
 
         // Parse round configurations from URL parameters (?n=5)
         const urlParams = new URLSearchParams(window.location.search);
-        const maxRounds = parseInt(urlParams.get('n')) || 5;
+        const maxRounds = parseInt(urlParams.get('n')) || 1;
 
         // Internal Game & Batch Tracking State Variables
         let currentRoundNum = 1;
