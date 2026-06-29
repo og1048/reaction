@@ -111,6 +111,14 @@
       "max": "5",
       "step": "0.1",
       "startingValue": "3"
+    },
+    {
+	"text": "Submit now (5) if you are feeling too rubbish to do anything in this period",
+	"sub": "",
+      "min": "1",
+      "max": "5",
+      "step": "1",
+      "startingValue": "5"
     }
   ]
 }
