@@ -25,6 +25,7 @@
             align-items: center;
             min-height: 100vh;
             min-height: 100dvh;
+            position: relative;
         }
 
         .container {
@@ -153,9 +154,31 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Small Back Button */
+        .back-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #fff;
+            text-decoration: none;
+            background-color: #333;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border: 1px solid #444;
+            transition: background-color 0.2s;
+            z-index: 1000;
+        }
+
+        .back-btn:hover {
+            background-color: #444;
+        }
     </style>
 </head>
 <body>
+    <a href="../index.html" class="back-btn">← Back</a>
 
     <div class="container" id="game-card">
         <div class="stats-bar">

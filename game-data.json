@@ -1,15 +1,15 @@
 {
   "answerQuestions": [
     {
-	"text": "Dizzyness- any today?",
+	"text": "Dizzyness- any today so far",
       "sub": "(<- None.........Loads ->)",
       "min": "1",
       "max": "5",
       "step": "0.1",
-      "startingValue": "3.0."
+      "startingValue": "3"
     },   
     {
-      "text": "Brain Fog",
+      "text": "Brain Fog today so far",
 	"sub": "(<- None.........Loads ->)",
       "min": "1",
       "max": "5",
@@ -17,7 +17,31 @@
       "startingValue": "3"
     },
     {
-      "text": "Illness/cold/cough",
+      "text": "Illness/cold/cough today so far",
+	"sub": "(<- None.........Loads ->)",
+      "min": "1",
+      "max": "5",
+      "step": "0.1",
+      "startingValue": "3"
+    },
+    {
+	"text": "Fatigue today so far",
+      "sub": "(<- None.........Loads ->)",
+      "min": "1",
+      "max": "5",
+      "step": "0.1",
+      "startingValue": "3"
+    },   
+    {
+      "text": "Most sad point of the day so far",
+	"sub": "(<- none.........very sad ->)",
+      "min": "1",
+      "max": "5",
+      "step": "0.1",
+      "startingValue": "3"
+    },
+    {
+      "text": "sound/light sensitiviy maximum noticed today so far",
 	"sub": "(<- None.........Loads ->)",
       "min": "1",
       "max": "5",

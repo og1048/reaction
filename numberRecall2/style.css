@@ -31,17 +31,18 @@
         /* Back Button Top Left */
         .back-btn {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 15px;
+            left: 15px;
             color: var(--text-color);
             text-decoration: none;
-            background-color: var(--container-bg);
-            padding: 10px 16px;
+            background-color: #333;
+            padding: 8px 14px;
             border-radius: 6px;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: bold;
             border: 1px solid #444;
             transition: background 0.2s;
+            z-index: 1000;
         }
 
         .back-btn:hover {
