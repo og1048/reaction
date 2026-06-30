@@ -121,8 +121,8 @@
             const timestamp = new Date().toISOString();
             const gameName = "AnswerQuestion";
 
-            // Output format: "qnNumber~answer" (e.g., "0~3.4")
-            const roundData = `${questionIndex}~${value}`;
+            // Output format: "qnNumber~questionText~answer" (e.g., "0~Dizzyness- any today so far~3.4")
+            const roundData = `${questionIndex}~${questionData.text}~${value}`;
 
             const payload = {
                 data: [

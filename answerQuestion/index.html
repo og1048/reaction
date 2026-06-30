@@ -29,8 +29,8 @@
         function getUserId() {
             let userId = localStorage.getItem('user_id');
             if (!userId) {
-                userId = typeof crypto.randomUUID === 'function' 
-                    ? crypto.randomUUID() 
+                userId = typeof crypto.randomUUID === 'function'
+                    ? crypto.randomUUID()
                     : 'user_' + Math.random().toString(36).substring(2, 15);
                 localStorage.setItem('user_id', userId);
             }
@@ -111,7 +111,7 @@
 
             // Track interaction with the optional secondary slider
             let secondaryTouched = false;
-            
+
             const revealSecondary = (e) => {
                 secondaryTouched = true;
                 secondarySlider.classList.remove('hidden-thumb');
@@ -139,8 +139,8 @@
             const timestamp = new Date().toISOString();
             const gameName = "AnswerQuestion";
 
-            // Output format: "qnNumber~answer~secondaryAnswer" (e.g., "0~3.4~2")
-            const roundData = `${questionIndex}~${value}~${secondValue}`;
+            // Output format: "qnNumber~questionText~answer~secondaryAnswer" (e.g., "0~Dizzyness- any today so far~3.4~2")
+            const roundData = `${questionIndex}~${value}~${secondValue}~${questionData.text}`;
 
             const payload = {
                 data: [
